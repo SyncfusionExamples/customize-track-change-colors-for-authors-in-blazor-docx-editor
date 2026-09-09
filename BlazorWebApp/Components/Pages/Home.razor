@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Syncfusion.Blazor.DocumentEditor
 @using BlazorWebApp
+@using System.Text.Json
 
 <div class="e-de-container-wrapper" style="width:100%; height:100%; display:flex; flex-direction:row; gap:16px; align-items:flex-start; box-sizing:border-box;">
     <div class="editor-area" style="flex:1 1 80%; min-width:0; max-width:80%; height:100%; overflow:hidden;">
@@ -90,12 +91,25 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Re-open the document only after the render that pushed the new
-        // DocumentEditorSettings to the JS engine has completed.
+        // Re-open the latest SFDT (which contains the user's edits) only
+        // after the render that pushed the new DocumentEditorSettings to
+        // the JS engine has completed.
         if (!firstRender && _needsReopen && Container?.DocumentEditor != null)
         {
             _needsReopen = false;
-            await Container.DocumentEditor.OpenAsync(TrackChanges);
+            //Get the current document
+            string base64Data = await Container.DocumentEditor.SaveAsBlobAsync(FormatType.Docx);
+            byte[] data = Convert.FromBase64String(base64Data);
+            base64Data = null;
+            //Word document file stream
+            Stream stream = new MemoryStream(data);
+            WordDocument document = WordDocument.Load(stream, ImportFormatType.Docx);
+            stream.Dispose();
+            stream = null;
+            string  sfdtString = JsonSerializer.Serialize(document);
+            document.Dispose();
+            //Reload with color changes
+            await Container.DocumentEditor.OpenAsync(sfdtString);
         }
     }
 
