@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSyncfusionBlazor();
 
 var app = builder.Build();
+app.UsePathBase("/customize-track-changes-color");
 
 Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("");
 
